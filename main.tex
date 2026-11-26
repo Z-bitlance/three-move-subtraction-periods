@@ -1,0 +1,501 @@
+\documentclass[11pt]{article}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage[hmargin=1in,vmargin=.9in]{geometry}
+\usepackage[hidelinks]{hyperref}
+\hypersetup{
+  pdftitle={Pair-Sum Periods in Three-Move Subtraction Games},
+  pdfauthor={Haofan Zhang}
+}
+
+\newtheorem{theorem}{Theorem}
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{corollary}[theorem]{Corollary}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\N}{\mathbb{N}_0}
+
+\title{Pair-Sum Periods in Three-Move Subtraction Games}
+\author{Haofan Zhang}
+\date{}
+
+\begin{document}
+\maketitle
+\vspace{-.8em}
+
+\begin{abstract}
+For a normal-play subtraction game with moves $0<a<b<c$, we characterize
+when each of $a+b$, $c+a$, and $c+b$ is a period from heap size zero of the
+win--loss sequence. The end-of-block test of Mikl\'os and Post and the
+initial-block formula of Manabe give a single translated-interval test for
+$c+b$. We use reflection to relate this test to Manabe's admissible
+angles and evaluate its endpoints to obtain the arithmetic test for
+least period $c+b$. This gives self-contained proofs of Manabe's
+Conjecture~57 and Mikl\'os--Post's Conjecture~3. We give the explicit
+change of variables connecting the arithmetic test to Manabe's earlier
+interval formulas and formalize both conjectures in Lean.
+\end{abstract}
+
+\section{Introduction}
+
+The period of a subtraction game can depend on the move sizes and on
+whether the pattern is required to repeat from heap size zero.
+Flammenkamp \cite[Conjecture~6]{flammenkamp} asked whether the least
+outcome period divides a pair sum in the non-additive three-move case.
+Computational studies of three-move periods include the enumeration of
+Benesh et al. \cite{benesh} and the conference report of Lacy et al.
+\cite{lacy}. Zhang treated families including $b=2a$ and $b=a+1$
+\cite[Propositions~3.1 and~4.1]{zhang}. Moriwaki treated the three
+candidate periods for $b\le 2a$ with continuous subtraction parameters
+\cite[Theorem~3]{moriwaki}.
+
+Mikl\'os and Post gave a general test for repetition from zero, its
+specialization to $c+b$, and a rule for removing moves longer than the
+least pure outcome period. Their Conjecture~3 asks for an arithmetic
+criterion for $c+b$ to be the least period
+\cite[Proposition~7, Lemma~9, Corollary~9.1, and Conjecture~3]{miklos-post}.
+Manabe gave sufficient tests on $c\bmod(a+b)$ and determined the
+least periods in the covered cases. His Conjecture~57 asks for the
+necessity of the tests at $c+a$ and $c+b$. His Remark~58 leaves the
+explicit comparison with the arithmetic conjecture
+\cite[Theorems~23 and~34, Conjecture~57, and Remark~58]{manabe}.
+
+The $c+a$ necessity follows directly from Manabe's initial-block
+calculation. For $c+b$, earlier criteria give the translated-interval
+test, and Manabe's difference-set calculations give a route from that
+test to his two avoidance conditions. We give a uniform reflection
+proof of the equivalence (Section~\ref{sec:manabe}) and use the interval
+endpoints and an elementary minimality argument to prove the arithmetic
+criterion for all $0<a<b<c$ (Section~\ref{sec:arithmetic}). The latter
+section also identifies the overlap with Manabe's earlier least-period
+formulas. The companion Lean file proves the two conjectures in their
+original scopes directly from the game recurrences.
+
+\newpage
+\section{Setup}
+
+In a normal-play subtraction game a move removes an allowed number of
+tokens from a heap, and a player with no legal move loses. A heap size is
+a \emph{losing position} if the player to move loses under optimal play.
+For any move set, the losing positions satisfy two rules. A losing
+position has no legal move to another losing position, and every other
+position has a legal move to a losing position. These rules uniquely
+determine the losing set by induction on heap size. We call $p>0$ a
+\emph{period} of the outcome if the losing indicator satisfies
+$Y(n+p)=Y(n)$ for every $n\ge 0$.
+
+Fix integers $0<a<b<c$. Write $W$ and $L$ for the losing sets of
+$\{a,b\}$ and $\{a,b,c\}$, with indicators $z$ and $Y$, respectively.
+Set $M=a+b$, $\delta=b-a$, and $\rho=c\bmod M$.
+Intervals denote sets of integers. The losing residue set of the
+two-move game is
+\begin{equation}\label{eq:Z}
+ Z=\{u\in[0,b):\lfloor u/a\rfloor\ \text{is even}\}
+ \quad\text{in }\Z/M\Z .
+\end{equation}
+All expressions involving residues in $Z$ are read modulo $M$.
+We use the gap sets
+\[
+ D=[a,b)\setminus Z,\qquad
+ \Lambda=[\delta,b)\setminus Z .
+\]
+In particular $\Lambda\subseteq D$, since $[0,a)\subseteq Z$.
+Formula~\eqref{eq:Z} is the usual two-move period block
+\cite[Theorem~14]{miklos-post}. For completeness, the game below $b$
+has only the move $a$, so the outcomes alternate in blocks of length
+$a$. Every size in $[b,M)$ can subtract $b$ into $[0,a)$ and is
+winning. The next lemma explains why this block repeats.
+
+For $p$ larger than every move, the following formulation is equivalent
+to the translating-zeros test of Mikl\'os and Post \cite[Lemma~9]{miklos-post}.
+Manabe uses the same initial-block argument for three moves \cite[\S3]{manabe}.
+
+\begin{lemma}[Repeating the initial block]\label{lem:repeat}
+Let $p$ exceed every move in a subtraction game and let $H$ be the
+losing positions in $[0,p)$. Then $H+p\N$ is the losing set if and only
+if $H$ contains no two elements at distance $p-s$ for any allowed
+move $s$.
+\end{lemma}
+
+\begin{proof}
+If $x,y\in H$ and $y-x=p-s$, then $x+p$ and $y$ would both be losing
+under repetition, with a legal move between them. Conversely, consider
+the periodic set $H+p\N$. A move between members of this set would give
+either distance $s$ within one block or distance $p-s$ between two
+residues at the join. The first is excluded by the actual initial
+outcomes and the second by hypothesis. If $n=r+kp$ is outside the
+periodic set, with $0\le r<p$, some legal move at $r$ leads to $H$.
+The same move at $n$ leads into $H+p\N$. The two rules for losing
+positions now give the claim.
+\end{proof}
+
+For the two-move block of length $M$, the complementary distances
+$M-a=b$ and $M-b=a$ are already excluded in the block. Hence
+$z(n)$ is determined by $n\bmod M$ for every $n\ge 0$.
+The two games agree below $c$. For $0\le u<b$ the first interval
+affected by $c$ has the following formula from Manabe's initial-block calculation
+\cite[\S3]{manabe}:
+\begin{equation}\label{eq:tail}
+ Y(c+u)=(1-z(u))(1-z(c+u-b)).
+\end{equation}
+Indeed, if $z(u)=1$, removing $c$ is a winning move. If $z(u)=0$,
+then $u\ge a$ and $z(u-a)=1$ by the alternating block below $b$.
+In this case the $a$-option $c+u-a$ is winning because it can remove
+$c$ into $u-a$. The $c$-option $u$ is winning as well, and the
+$b$-option is below $c$. This proves \eqref{eq:tail}. In particular
+$[c,c+a)$ contains no losing positions.
+
+\section{Exact tests for the three pair sums}
+
+\begin{theorem}\label{thm:tests}
+For all $0<a<b<c$, the following are necessary and sufficient
+conditions for the indicated outcome periods:
+\begin{align}
+ a+b\quad &\Longleftrightarrow\quad
+    Z\cap(\rho+Z)=\varnothing, \label{eq:short}\\
+ c+a\quad &\Longleftrightarrow\quad
+    (Z\cap[0,\delta))\cap\bigl(Z+(\delta-\rho)\bigr)=\varnothing,
+    \label{eq:middle}\\
+ c+b\quad &\Longleftrightarrow\quad
+    \rho+\Lambda+a\subseteq Z. \label{eq:long}
+\end{align}
+Moreover, if the outcome has any period $p\le\max\{c,M\}$, then
+$L=W$. If $L\ne W$, any period less than $2c$ is the least period.
+\end{theorem}
+
+Mikl\'os and Post showed that removing the moves longer than the least
+pure outcome period leaves the sequence unchanged
+\cite[Proposition~7]{miklos-post}. This gives the redundancy of $c$ when
+the least period is less than $c$. The argument below uses the initial
+block directly. Equation~\eqref{eq:short} is
+Manabe's inert-move test \cite[Definition~19 and Proposition~25]{manabe},
+stated here for the outcome sequence.
+
+\begin{proof}
+Suppose first that $p\le\max\{c,M\}$ is a period of $Y$. If
+$p\le c$, then $Y=z$ throughout $[0,p)$. If $c<p\le M$, the
+same agreement holds since $[c,p)$ lies in $[c,c+a)$ and is
+also disjoint from $W$ by \eqref{eq:Z} and $b<c$. For an arbitrary
+$n=r+kp$, $0\le r<p$, the following two checks show that $L$ is
+the losing set of the base game. First, there is no move by $a$ or $b$
+from one member of $L$ to another, since these are moves in
+$\{a,b,c\}$. Second, if $n\notin L$, then $r\notin W$, so some
+base move at $r$ reaches a member of $W\cap[0,p)=L\cap[0,p)$.
+By periodicity this move at $n$ reaches $L$. Thus $L=W$.
+
+The set $W$ satisfies the rules for the three-move game exactly when
+it contains no two positions at distance $c$. Every position outside
+$W$ already has a winning base move. By $M$-periodicity the distance
+condition is exactly $Z\cap(\rho+Z)=\varnothing$. This proves
+\eqref{eq:short}. For a purely periodic sequence its least period
+divides every period, by the Euclidean algorithm on periods.
+If $L\ne W$, a period $p<2c$ with a smaller least period would
+therefore have a period at most $p/2<c$, a contradiction.
+
+For $p=c+a$, we use the initial block and collision calculation of
+\cite[Theorem~23]{manabe}. The initial losing block is $W\cap[0,c)$ by
+\eqref{eq:tail}. The distances $p-a=c$ and $p-c=a$ are already
+excluded since they are legal moves. A pair at distance $p-b=c-\delta$
+has the form $x,x+c-\delta$ for $0\le x<\delta$. Both positions
+are losing exactly when $x\in Z$ and $x+\rho-\delta\in Z$.
+Lemma~\ref{lem:repeat} gives \eqref{eq:middle}.
+
+For $p=c+b$, the distances $p-b=c$ and $p-c=b$ are legal moves.
+A pair at the remaining distance $p-a=c+\delta$ must start at
+$x\in[0,a)$, and each such $x$ is losing. Thus the test in
+Lemma~\ref{lem:repeat} reduces to $Y(c+u)=0$ for all
+$u\in[\delta,b)$. This is the end-of-block criterion of
+Mikl\'os and Post \cite[Corollary~9.1]{miklos-post}.
+By \eqref{eq:tail}, the requirement is automatic for $u\in Z$,
+and otherwise it is $z(c+u-b)=1$. The latter residue is
+$\rho+u+a$, which proves \eqref{eq:long}.
+\end{proof}
+
+\section{Manabe's admissible-angle conjecture}\label{sec:manabe}
+
+Manabe's condition T1 is \eqref{eq:middle}. His condition T2 consists
+of two avoidance conditions \cite[Definition~19 and Lemma~22]{manabe}.
+\begin{equation}\label{eq:T2}
+ (\rho+\Lambda)\cap Z=\varnothing,\qquad
+ (\rho+D)\cap\Lambda=\varnothing
+\end{equation}
+We prove their equivalence with \eqref{eq:long} by reflection.
+
+First, in $\Z/M\Z$ we have
+\begin{equation}\label{eq:lambda}
+ \Lambda=(\Z/M\Z)\setminus\bigl(Z\cup(Z-a)\bigr).
+\end{equation}
+For $u\in[0,\delta)$, if $u$ is outside $Z$, adding $a$ flips its
+block parity while remaining below $b$, and hence enters $Z$.
+For $u\in[b,M)$, adding $a$ wraps into $[0,a)$.
+For $u\in[\delta,b)$, adding $a$ instead lands in $[b,M)$.
+This recovers the identity in \cite[Lemma~22]{manabe}. Also
+$Z\cap(Z-a)=\varnothing$, since two base losing positions cannot differ by $a$.
+
+We now exhibit a reflection preserving $Z$. Write $b=qa+r$ with
+$0\le r<a$. If $q$ is odd, $Z$ consists of equal blocks with
+endpoints ranging from $0$ to $qa-1$, and $u\mapsto qa-1-u$
+reverses the blocks. If $q$ is even, $u\mapsto (q-1)a-1-u$
+reverses the full blocks and preserves the last block $[qa,b)$
+modulo $M$. In the second case, on that last block the map is
+$u\mapsto qa+b-1-u$ after adding $M$. Let the corresponding map in
+either case be $u\mapsto R-u$.
+Then the reflection
+\[
+ \iota(u)=R-a-u
+\]
+interchanges $Z$ and $Z-a$, so it preserves $\Lambda$ by
+\eqref{eq:lambda}.
+
+Now \eqref{eq:long} gives $\rho+\Lambda\subseteq Z-a$, which
+implies the first condition of \eqref{eq:T2}. Applying $\iota$
+gives $\Lambda-\rho\subseteq Z$. Since $D$ is disjoint from
+$Z$, this is enough for the second condition of \eqref{eq:T2}.
+Conversely, \eqref{eq:T2} and $\Lambda\subseteq D$ show that
+$\rho+\Lambda$ avoids both $Z$ and $\Lambda$, so by
+\eqref{eq:lambda} it lies in $Z-a$. This is \eqref{eq:long}.
+
+The earlier difference-set formulas give another route. Using
+\eqref{eq:lambda}, the forbidden residues in \eqref{eq:long} form
+$(Z-\Lambda)\cup(\Lambda-\Lambda)$, and T2 forbids
+$(Z-\Lambda)\cup(\Lambda-D)$. For $a\nmid b$, the arcs listed in
+\cite[Proposition~29 and Appendix~A]{manabe} give the same union.
+In his notation $b-a=\eta a+r$. When $\eta$ is even, the indexed arcs
+of $\Lambda-D$ lie in $Z-\Lambda$ and the remaining arc is
+$\Lambda-\Lambda$. When $\eta$ is odd, the extra arc of $\Lambda-D$
+lies in $(\Lambda-\Lambda)\cup[1,a-1]$, and $[1,a-1]$ lies in
+$Z-\Lambda$. The inclusion $\Lambda\subseteq D$ gives the reverse
+inclusion of the unions.
+When $b/a$ is an odd integer, $\Lambda$ is empty. When $b/a$ is an
+even integer, fitting the translated length-$a$ interval in a
+length-$a$ block forces $a\mid\rho$, which the primitive hypotheses
+exclude. Manabe excludes the same case for T2
+\cite[Theorem~30 and Proposition~61]{manabe}.
+
+\begin{corollary}
+Conjecture~57 of Manabe \cite[\S6]{manabe} holds. If the Sprague--Grundy
+sequence is periodic from zero with least period $p=c+a$ or $p=c+b$,
+the residue $\rho$ satisfies the test for that period.
+The same necessity holds for the candidate $p=a+b$.
+\end{corollary}
+
+\begin{proof}
+Every period of the Sprague--Grundy sequence is a period of the
+outcome, since its value is zero exactly at losing positions.
+Apply Theorem~\ref{thm:tests} and the equivalence just proved.
+\end{proof}
+
+These arguments apply to the specified periods. Restricting the
+set of possible least periods remains a separate question
+\cite[Conjecture~56]{manabe}.
+
+\section{The arithmetic conjecture of Mikl\'os and Post}\label{sec:arithmetic}
+
+Define
+\[
+ \rho=2aj+t,\qquad \sigma=(c-a)\bmod M=2aj'+t',
+ \qquad 0\le t,t'<2a,
+\]
+where the residues $\rho,\sigma$ lie in $[0,M)$. As above,
+$b=qa+r$ with $0\le r<a$.
+
+For a purely periodic sequence, any eventual period is a period
+from zero. Indeed, translate the two positions being compared by a
+sufficiently large multiple of a pure period. Thus the least period
+from zero agrees with the least eventual period when the preperiod is zero.
+
+\begin{theorem}\label{thm:arithmetic}
+The outcome has least period $c+b$ from zero if and only if the
+applicable condition below holds.
+\begin{enumerate}
+ \setlength{\itemsep}{0pt}
+ \item If $q$ is even, then
+ $\sigma>0$, $t'\le r$, $2j'\le q$, and
+ $t'+a\le 2r$ when $2j'=q$.
+ \item If $q$ is odd and $r>0$, then
+ $r\le t\le a$, with $t<a$ when $j=0$.
+ \item If $q$ is odd and $r=0$, then $t\ne a$.
+\end{enumerate}
+For $a>1$ this is Conjecture~3 of Mikl\'os and Post \cite[\S7]{miklos-post}.
+The last even-case inequality is their $t'\le 2r-a$ over the integers.
+\end{theorem}
+
+\begin{proof}
+Since $M<c+b<2c$, the period $c+b$ is least exactly when it
+exists and $L\ne W$, by Theorem~\ref{thm:tests}.
+In terms of the base residues the two requirements are
+\[
+ \rho+\Lambda+a\subseteq Z,\qquad Z\cap(\rho+Z)\ne\varnothing .
+\]
+We evaluate these using the parity of $q$.
+
+\smallskip
+\noindent\textit{$q$ even.}
+Write $q=2h$. The set $Z$ has full blocks
+$[2ia,(2i+1)a)$ for $0\le i<h$ and a last block $[qa,b)$
+of length $r$. The gap $\Lambda$ is $[(q-1)a+r,qa)$.
+Thus $\rho+\Lambda+a$ is the cyclic interval starting at
+$\sigma$ with length $a-r$. It must fit into a single block
+of $Z$, since the blocks are separated by nonempty gaps,
+including at the wrap. This gives $t'\le r$ in a full block
+and $t'\le 2r-a$ in the last block, with $j'\le h$.
+
+Among these possibilities, $\sigma=0$ is excluded because
+$\rho=a$ translates $Z$ disjointly from itself. For
+$\sigma>0$, the fit bounds give
+$\rho=(2j'+1)a+t'<M$. The integer
+\[
+ z_*=(q-2j')a+(r-t')
+\]
+is in $Z$. If $j'>0$, it is in a full block because
+$0\le r-t'<a$. If $j'=0$, then $t'>0$ and
+$0\le r-t'<r$, so it is in the last block. Since
+$\rho+z_*=M$ and $0\in Z$, the required overlap follows.
+
+\smallskip
+\noindent\textit{$q$ odd and $r>0$.}
+Write $q=2h+1$. The blocks of $Z$ are $[2ia,(2i+1)a)$ for
+$0\le i\le h$, and $\Lambda=[qa,b)$.
+The interval $\rho+\Lambda+a$ is $[\rho-r,\rho)$ modulo $M$.
+Fitting into one block gives $2ia+r\le\rho\le(2i+1)a$
+for some $0\le i\le h$. This is equivalent to $r\le t\le a$,
+since $\rho<M$ excludes $j>h$ when $t\ge r$.
+When $t<a$, $\rho$ itself lies in $Z$, giving overlap with
+$\rho+0$. When $t=a$ and $j>0$, the residue of
+$\rho+(q-1)a$ is $(2j-1)a-r$, which belongs to the
+block $[2(j-1)a,(2j-1)a)$. As $(q-1)a\in Z$, this
+gives overlap again. The excluded endpoint $j=0$, $t=a$
+has $\rho=a$.
+
+\smallskip
+\noindent\textit{$q$ odd and $r=0$.}
+Here $\Lambda$ is empty and $M$ is a multiple of $2a$.
+The base set is the lift of $[0,a)$ modulo $2a$, so disjointness
+from its translate occurs exactly when $t=a$. This proves the
+last condition.
+\end{proof}
+
+\paragraph{Comparison with the earlier residue intervals.}
+For primitive non-additive triples with $a\nmid b$, Manabe's
+Theorem~30 gives a set $C_{a,b}$ of angles, and Theorem~34,
+Proposition~48, and Corollary~49 give least outcome period $b+c$
+throughout this set \cite{manabe}. In his notation $\eta=q-1$ and
+$\varepsilon=r$. For $q=2h+1$, the interval $[r,a)$ is the $j=0$
+case of our test. The other intervals are $[2ja+r,(2j+1)a]$ for
+$1\le j\le h$. For $q=2h$, translating the allowed values of
+$\sigma$ by $a$ gives $[a+1,a+r]$, then
+$[(2j'+1)a,(2j'+1)a+r]$ for $1\le j'<h$, and finally
+$[(q+1)a,qa+2r]$ when nonempty. These are exactly the intervals of
+$C_{a,b}$, so the earlier least-period result gives the sufficient
+direction in this range by the change of variables. For the reverse
+direction, a least outcome period of $b+c$ forces T2 by the interval
+criterion and the equivalence in Section~\ref{sec:manabe}. It rules
+out the inert angles, for which $a+b$ is already a period.
+
+The ingredients for the remaining ranges are available separately.
+For primitive triples with $a>1$ and $a\mid b$, the admissible-angle
+results and the necessity above give least period $b+c$ in the odd
+quotient case and exclude it in the even case
+\cite[Theorems~30 and~34, Corollary~49, and Proposition~61]{manabe}. This agrees
+with the arithmetic test. In the odd case $t=a$ would imply $a\mid c$,
+and in the even case the test requires $t'=0$, also forcing $a\mid c$.
+In the primitive additive case with $a>1$,
+$\rho=0$, $\sigma=b$, and $r>0$, so the arithmetic test fails. The
+additive formula gives $a+2b-r$ for odd $q$ and $a(2b+r)$ for even
+$q$, both different from $b+c$ \cite[Theorem~36]{manabe}.
+Mikl\'os and Post's dilation rule reduces nonprimitive triples to
+primitive ones. Dividing the move sizes by their common divisor
+divides the remainders by that divisor and leaves the quotients fixed.
+Their $a=1$ classification gives least pure period $b+c$ precisely
+when $b$ is odd and $c$ is even, or when $b$ is even and $\rho$ is odd
+and greater than $1$. These are the arithmetic conditions with $a=1$
+\cite[Proposition~5 and Theorem~20]{miklos-post}. The proof above handles
+all these cases by the same interval and minimality criteria.
+
+\section*{Verification}
+
+\paragraph{Computational check.}
+We compared the criteria with the direct outcome recurrence using
+the companion script \texttt{verify\_subtraction\_periods.py}.
+All comparisons agree for the $161{,}700$ triples with
+$1\le a<b<c\le100$, including the minimality claim for $c+b$.
+
+\paragraph{Formal verification.}
+The accompanying file \texttt{SubtractionPeriods.lean} formalizes both
+conjectures in Lean 4.19.0 using the standard library.
+\begin{itemize}
+ \setlength{\itemsep}{0pt}
+ \item \texttt{manabe\_conjecture\_57\_canonical} derives both avoidance
+ implications from the canonical mex recurrence.
+ \item \texttt{miklos\_post\_conjecture\_3\_original} derives the
+ arithmetic equivalence for zero preperiod and least eventual period
+ $b+c$ from the unseeded losing-position recurrence.
+\end{itemize}
+Manabe's own Lean supplement
+formalizes his sufficient criteria and least-period results and lists
+Conjecture~57 among the statements left unformalized
+\cite{manabe-lean}. For both theorems in the present file, Lean reports
+the axioms \texttt{propext}, \texttt{Classical.choice}, and \texttt{Quot.sound}.
+
+\paragraph{Use of generative AI.}
+OpenAI Codex developed the proof strategy and derivations, wrote the
+verification script and Lean formalization, and prepared this draft
+for human mathematical review.
+
+\begin{thebibliography}{9}
+\raggedright
+\bibitem{benesh}
+Bret Benesh, Jamylle Carter, Deidra A. Coleman, Douglas G. Crabill,
+Jack H. Good, Michael A. Smith, Jennifer Travis, and Mark Daniel Ward,
+\emph{Periods in Subtraction Games},
+29th International Conference on Probabilistic, Combinatorial and
+Asymptotic Methods for the Analysis of Algorithms, LIPIcs \textbf{110}
+(2018), 8:1--8:3.
+\href{https://doi.org/10.4230/LIPIcs.AofA.2018.8}{doi:10.4230/LIPIcs.AofA.2018.8}.
+
+\bibitem{flammenkamp}
+Achim Flammenkamp,
+\emph{Lange Perioden in Subtraktions-Spielen},
+Ph.D. thesis, Universit\"at Bielefeld, 1997.
+\href{https://wwwhomes.uni-bielefeld.de/achim/diss.ps.gz}{Author's copy}.
+
+\bibitem{lacy}
+Kali Lacy, Bret Benesh, Jamylle Carter, Deidra Coleman, Douglas Crabill,
+Jack Good, Michael Smith, Jennifer Travis, and Mark Ward,
+\emph{A Computational Approach to the Structure of Subtraction Games},
+Joint Statistical Meetings, 2019,
+\href{https://ww2.amstat.org/meetings/jsm/2019/onlineprogram/AbstractDetails.cfm?abstractid=305112}
+{poster abstract 305112}.
+
+\bibitem{manabe}
+Hikaru Manabe,
+\emph{Purely Periodic Three-move Subtraction Games},
+preprint, \href{https://arxiv.org/abs/2609.05358v2}{arXiv:2609.05358v2},
+2026.
+
+\bibitem{manabe-lean}
+Hikaru Manabe,
+\emph{Lean formalization of ``Purely Periodic Three-move Subtraction Games''},
+\href{https://arxiv.org/src/2609.05358v2/anc/lean-verification/README.md}
+{ancillary README to arXiv:2609.05358v2}, 2026.
+
+\bibitem{miklos-post}
+Istv\'an Mikl\'os and Logan Post,
+\emph{Superpolynomial period lengths of the winning positions in the
+subtraction game},
+International Journal of Game Theory \textbf{53} (2024), 1275--1313,
+\href{https://doi.org/10.1007/s00182-024-00911-5}{doi:10.1007/s00182-024-00911-5}.
+
+\bibitem{moriwaki}
+Yuto Moriwaki,
+\emph{Subtraction Nim with Continuous Parameters},
+preprint, \href{https://arxiv.org/abs/2606.11658}{arXiv:2606.11658}, 2026.
+
+\bibitem{zhang}
+Shenxing Zhang,
+\emph{On the linearity of the periods of subtraction games},
+Theoretical Computer Science \textbf{985} (2024), 114350,
+\href{https://doi.org/10.1016/j.tcs.2023.114350}{doi:10.1016/j.tcs.2023.114350}.
+\end{thebibliography}
+
+\end{document}
